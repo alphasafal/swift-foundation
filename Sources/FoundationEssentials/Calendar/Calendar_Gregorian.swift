@@ -2302,7 +2302,9 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
 
     // Returns the weekday of the last day of the month or the year, using `referenceDayOfPeriod` and `referenceDayWeekday` as the reference
     func relativeWeekdayForLastDayOfPeriod(periodLength: Int, referenceDayOfPeriod dayOfPeriod: Int, referenceDayWeekday weekday: Int) -> Int {
-        return (periodLength - dayOfPeriod + weekday - firstWeekday) % 7
+        // Swift's % keeps the sign; normalize to 0...6 like ICU does when weekday < firstWeekday
+        let relative = (periodLength - dayOfPeriod + weekday - firstWeekday) % 7
+        return relative < 0 ? relative + 7 : relative
     }
 
     // Returns the "adjusted" day of month considering gregorian cutover:
@@ -2823,8 +2825,8 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
                     preconditionFailure("dateComponents(:from:in:) unexpectedly returns nil for requested component")
                 }
                 var isoDayOfYear = try dayOfYear(fromYear: year, month: month, day: day)
-                if month == 1 && weekOfYear > 52 {
-                    // the first week of the next year
+                if month == 1 && weekOfYear >= 52 {
+                    // a January date in week 52 or 53 belongs to the previous week-year
                     isoDayOfYear += yearLength(yearForWeekOfYear)
                 } else if month != 1 && weekOfYear == 1 {
                     // the last week of the previous year
