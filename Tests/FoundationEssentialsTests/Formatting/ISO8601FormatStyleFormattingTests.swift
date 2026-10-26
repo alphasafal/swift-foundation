@@ -187,6 +187,15 @@ private struct ISO8601FormatStyleFormattingTests {
 
         #expect(date.formatted(.iso8601.year().weekOfYear()) == "2021-W26")
         #expect(date.formatted(.iso8601.year().weekOfYear().day()) == "2021-W26-04") // day() is the weekday number
+
+        // Offsets of exactly ±18:00 must be written out, not replaced by "Z" (which would shift the instant by 18 hours)
+        for hours in [18, -18] {
+            let extremeZone = try #require(TimeZone(secondsFromGMT: hours * 3600))
+            let extremeStyle = Date.ISO8601FormatStyle(timeZone: extremeZone)
+            let formatted = date.formatted(extremeStyle)
+            #expect(!formatted.hasSuffix("Z"), "\(formatted)")
+            #expect(try extremeStyle.parse(formatted) == date)
+        }
         #expect(date.formatted(.iso8601.year().day()) == "2021-182") // day() is the ordinal day
 
         #expect(date.formatted(.iso8601.time(includingFractionalSeconds: false)) == "15:56:32")
