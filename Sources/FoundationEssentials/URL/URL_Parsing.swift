@@ -410,7 +410,8 @@ extension URL {
             if let atIndex = buffer[authorityStart..<authorityEnd].lastIndex(of: T.CodeUnit(UInt8(ascii: "@"))) {
                 // Found "@", so user exists
                 hostStart = atIndex + 1
-                if let colonIndex = buffer[authorityStart..<atIndex].lastIndex(of: T.CodeUnit(UInt8(ascii: ":"))) {
+                // Split user and password at the first ":" (matches URLComponents, CFURL and WHATWG)
+                if let colonIndex = buffer[authorityStart..<atIndex].firstIndex(of: T.CodeUnit(UInt8(ascii: ":"))) {
                     // Found ":", so password exists
                     flags.insert([.hasUser, .hasPassword])
                     impl.pointee.userRange = authorityStart..<colonIndex

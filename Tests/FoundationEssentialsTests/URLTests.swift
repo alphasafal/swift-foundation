@@ -33,6 +33,21 @@ private func checkBehavior<T: Equatable>(_ result: T, new: T, old: T, sourceLoca
 @Suite("URL")
 private struct URLTests {
 
+    @Test func userPasswordSplitAtFirstColon() throws {
+        let string = "https://alice:pa:ss@example.com/"
+        let url = try #require(URL(string: string))
+        #expect(url.user() == "alice")
+        #expect(url.password() == "pa:ss")
+
+        // URL and URLComponents must agree on the same input
+        let components = try #require(URLComponents(string: string))
+        #expect(components.user == url.user())
+        #expect(components.password == url.password())
+        let fromURL = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        #expect(fromURL.user == "alice")
+        #expect(fromURL.password == "pa:ss")
+    }
+
     @Test func basics() throws {
         let string = "https://username:password@example.com:80/path/path?query=value&q=v#fragment"
         let url = try #require(URL(string: string))
