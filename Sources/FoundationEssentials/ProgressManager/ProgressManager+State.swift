@@ -306,9 +306,12 @@ extension ProgressManager {
                 
                 children[update.index].fraction = update.updatedFraction
                 
-                // Only add to selfFraction if this update is transitioning from unfinished to finished
+                // Add the child's share when it transitions from unfinished to finished, and take it back
+                // if a finished child becomes unfinished again (its totalCount grew or its counts were reset)
                 if update.updatedFraction.isFinished && !currentWasFinished {
                     selfFraction.completed += update.assignedCount
+                } else if !update.updatedFraction.isFinished && currentWasFinished {
+                    selfFraction.completed -= update.assignedCount
                 }
             }
         }

@@ -153,6 +153,21 @@ extension Tag {
         parent.complete(count: 1)
         #expect(parent.fractionCompleted == 1.0)
         #expect(parent.isFinished)
+    @Test func finishedChildBecomingUnfinishedIsNotDoubleCounted() async throws {
+        let overall = ProgressManager(totalCount: 1)
+        let childManager = overall.subprogress(assigningCount: 1).start(totalCount: 4)
+        childManager.complete(count: 4)
+        #expect(overall.fractionCompleted == 1.0)
+
+        // Growing a finished child's total makes it unfinished again
+        childManager.setCounts { _, total in
+            total = 8
+        }
+        #expect(overall.fractionCompleted == 0.5)
+
+        childManager.complete(count: 4)
+        #expect(overall.fractionCompleted == 1.0)
+        #expect(overall.completedCount == 1)
     }
 
     @Test func childTotalCountReset() async throws {
