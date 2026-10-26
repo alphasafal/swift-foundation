@@ -135,6 +135,28 @@ private struct GregorianFamilyCalendarParityTests {
         #expect(ours.day == icu.day)
     }
 
+    /// Adding months or years must apply the leap-year rule to the extended Gregorian year, not the era year
+    /// (Reiwa 6, BE 2567 and Minguo 113 are all 2024, a leap year).
+    @Test(arguments: GregorianCalendarFamily.allCases)
+    func addingMonthsAndYearsUsesExtendedYearForLeapYears(_ family: GregorianCalendarFamily) throws {
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = .gmt
+        func date(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
+            try #require(gregorian.date(from: DateComponents(year: year, month: month, day: day, hour: 12)))
+        }
+        let cases: [(start: Date, component: Calendar.Component, value: Int, expected: Date)] = [
+            (try date(2024, 1, 31), .month, 1, try date(2024, 2, 29)),
+            (try date(2026, 1, 31), .month, 1, try date(2026, 2, 28)),
+            (try date(2024, 2, 29), .year, 1, try date(2025, 2, 28)),
+            (try date(2024, 2, 29), .year, 4, try date(2028, 2, 29)),
+        ]
+        for c in cases {
+            let ours = family.ours.date(byAdding: c.component, value: c.value, to: c.start)
+            #expect(ours == c.expected, "\(family) \(c.start) + \(c.value) \(c.component)")
+            #expect(ours == family.icu.date(byAdding: c.component, value: c.value, to: c.start))
+        }
+    }
+
     /// Building a date from this calendar's own era and year must match `_CalendarICU`.
     @Test(arguments: GregorianCalendarFamily.allCases, gregorianFamilyProbes)
     func dateFromComponentsMatchesICU(_ family: GregorianCalendarFamily, _ probe: GregorianFamilyProbe) {

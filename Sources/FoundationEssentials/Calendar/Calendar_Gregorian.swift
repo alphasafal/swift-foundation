@@ -2354,9 +2354,23 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
         return (day, monthStartDate, monthLen, false)
     }
 
+    /// The extended (proleptic Gregorian) year for `components.year`.
+    ///
+    /// `DateComponents.year` holds an era year for the Buddhist, Japanese and Republic of China calendars and for
+    /// BCE dates, but leap-year and month-length math needs the extended year. Mirrors `date(from:)`.
+    func extendedYear(from components: DateComponents) -> Int? {
+        guard let year = components.year else { return nil }
+        if let era = eraTable.flatMap({ $0.entry(eraNumber: components.era ?? $0.defaultEraNumber) }) {
+            return era.extendedYear(fromEraYear: year)
+        } else if components.era == 0 {
+            return 1 - year
+        }
+        return year
+    }
+
     // Limits the day of month to the number of days in the given month
     func capDay(in dateComponent: inout DateComponents) {
-        guard let day = dateComponent.day, let month = dateComponent.month, let year = dateComponent.year else {
+        guard let day = dateComponent.day, let month = dateComponent.month, let year = extendedYear(from: dateComponent) else {
             return
         }
 
