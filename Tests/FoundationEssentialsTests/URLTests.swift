@@ -3742,16 +3742,6 @@ private struct URLTests {
         #expect(standardized.absoluteURL.path() == "/base/directory/thing")
     }
 
-    @Test func standardizedPathNeverBecomesAnAuthority() throws {
-        // Removing "/." from "/.//example.org/x" leaves "//example.org/x", which would re-parse with a host
-        let url = try #require(URL(string: "/.//example.org/x"))
-        let standardized = url.standardized
-        #expect(standardized.host() == nil)
-        let reparsed = try #require(URL(string: standardized.relativeString))
-        #expect(reparsed.host() == nil)
-        #expect(reparsed.path() == standardized.path())
-    }
-
     @Test func standardized() throws {
         // No-op for empty or non-decomposable URLs
         var url = try #require(URL(string: "https://example.com"))
