@@ -3028,6 +3028,17 @@ extension DataTests {
         #expect(Data(base64Encoded: "AAAAA", options: .ignoreUnknownCharacters) == nil)
     }
 
+    @Test func base64Decode_paddingFollowedByDataInFinalGroup() {
+        // "=" may only appear at the end; previously these decoded to shifted bytes instead of failing.
+        #expect(Data(base64Encoded: "AA=A") == nil)
+        #expect(Data(base64Encoded: "SGVsbG=8") == nil)
+        #expect(Data(base64Encoded: "QUJD" + "QU=D") == nil)
+        // Controls: valid padding still decodes.
+        #expect(Data(base64Encoded: "AA==") == Data([0]))
+        #expect(Data(base64Encoded: "AAA=") == Data([0, 0]))
+        #expect(Data(base64Encoded: "SGVsbG8=") == Data("Hello".utf8))
+    }
+
     @Test func base64Decode_variousPaddingNeeds() {
         #expect(Data([1, 2, 3, 4]) == Data(base64Encoded: "AQIDBA=="))
         #expect(Data([1, 2, 3, 4, 5]) == Data(base64Encoded: "AQIDBAU="))

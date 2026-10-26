@@ -138,4 +138,13 @@ private struct NumberFormatStyleICUSkeletonTests {
         #expect(style.precision(.integerAndFractionLength(integerLimits: 2..., fractionLimits: 3...3)).rounded(increment: 0.3).collection.skeleton == "precision-increment/0.300 integer-width/+00 rounding-mode-half-even")
         #expect(style.precision(.integerAndFractionLength(integerLimits: ...2, fractionLimits: 3...3)).rounded(increment: 0.3).collection.skeleton == "precision-increment/0.300 integer-width/## rounding-mode-half-even")
     }
+
+    @Test func styleSkeleton_floatingPoint_roundingIncrementIsNotLossy() throws {
+        // Increments that Decimal(Double) can't represent exactly must still reach ICU as written
+        let style: FloatingPointFormatStyle<Double> = .init(locale: Locale(identifier: "en_US"))
+        #expect(style.rounded(increment: 0.07).collection.skeleton == "precision-increment/0.07 rounding-mode-half-even")
+        #expect(style.rounded(increment: 0.14).collection.skeleton == "precision-increment/0.14 rounding-mode-half-even")
+        #expect(style.rounded(increment: 0.001).collection.skeleton == "precision-increment/0.001 rounding-mode-half-even")
+        #expect(1.0.formatted(style.rounded(increment: 0.07)) == "0.98")
+    }
 }
