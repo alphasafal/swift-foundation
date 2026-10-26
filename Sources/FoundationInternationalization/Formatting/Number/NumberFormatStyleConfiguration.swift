@@ -763,7 +763,10 @@ extension NumberFormatStyleConfiguration.RoundingIncrement {
             }
         case .floatingPoint(let value):
             if value > 0 {
-                return "precision-increment/\(Decimal(value))"
+                // Use the shortest round-tripping decimal ("0.07"). `Decimal(Double)` is lossy
+                // (0.07 -> 0.07000000000000001024), and ICU would round to that increment instead.
+                let increment = Decimal(string: "\(value)") ?? Decimal(value)
+                return "precision-increment/\(increment)"
             } else {
                 return ""
             }
