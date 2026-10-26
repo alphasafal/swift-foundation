@@ -51,6 +51,8 @@ extension UInt8 {
     internal static var _verticalTab: UInt8 { UInt8(0x0b) }
     internal static var _formFeed: UInt8 { UInt8(0x0c) }
     internal static var _nbsp: UInt8 { UInt8(0xa0) }
+    /// First byte of U+00A0 NO-BREAK SPACE in UTF-8 (C2 A0).
+    internal static var _nbspUTF8LeadByte: UInt8 { UInt8(0xc2) }
     internal static var _asterisk: UInt8 { UInt8(ascii: "*") }
     internal static var _singleQuote: UInt8 { UInt8(ascii: "'") }
     internal static var _dollar: UInt8 { UInt8(ascii: "$") }
