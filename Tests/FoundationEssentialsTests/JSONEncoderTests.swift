@@ -1686,6 +1686,19 @@ private struct JSONEncoderTests {
         }
     }
 
+    @Test func json5NoBreakSpaceIsWhitespace() throws {
+        let decoder = JSONDecoder()
+        decoder.allowsJSON5 = true
+
+        // U+00A0 NO-BREAK SPACE is JSON5 whitespace (UTF-8: C2 A0)
+        let valid = Data("{\"a\":\u{00A0}true,\u{00A0}\"b\"\u{00A0}:false}".utf8)
+        #expect(try decoder.decode([String: Bool].self, from: valid) == ["a": true, "b": false])
+
+        // A lone 0xA0 byte is invalid UTF-8 and must not be skipped as whitespace
+        let invalid = Data([UInt8(ascii: "["), UInt8(ascii: "1"), UInt8(ascii: ","), 0xA0, UInt8(ascii: "2"), UInt8(ascii: "]")])
+        #expect(throws: (any Error).self) { try decoder.decode([Int].self, from: invalid) }
+    }
+
     @Test func assumesTopLevelDictionary() throws {
         let decoder = JSONDecoder()
         decoder.assumesTopLevelDictionary = true
