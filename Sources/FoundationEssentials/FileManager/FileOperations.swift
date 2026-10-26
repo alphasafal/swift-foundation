@@ -1198,10 +1198,12 @@ enum _FileOperations {
                             tempBuff.initialize(repeating: 0)
                             defer { tempBuff.deinitialize() }
                             let len = readlink(fts_path, tempBuff.baseAddress!, FileManager.MAX_PATH_SIZE - 1)
-                            if len >= 0, symlink(tempBuff.baseAddress!, buffer.baseAddress!) != -1 {
+                            // A full buffer means the link target was truncated; never create a link to a different path.
+                            let truncated = len == FileManager.MAX_PATH_SIZE - 1
+                            if len >= 0, !truncated, symlink(tempBuff.baseAddress!, buffer.baseAddress!) != -1 {
                                 return
                             }
-                            try delegate.throwIfNecessary(errno, String(cString: fts_path), String(cString: buffer.baseAddress!))
+                            try delegate.throwIfNecessary(truncated ? ENAMETOOLONG : errno, String(cString: fts_path), String(cString: buffer.baseAddress!))
                         }
                         #endif
                         

@@ -386,8 +386,14 @@ extension FileManager {
     }
 #endif
 
+    // Linux allows paths and symlink targets up to PATH_MAX (4096) bytes; Darwin's MAXPATHLEN is 1024.
+    #if canImport(Glibc) || canImport(Musl) || canImport(Android)
+    @nonobjc
+    static var MAX_PATH_SIZE: Int { Int(PATH_MAX) + 2 }
+    #else
     @nonobjc
     static var MAX_PATH_SIZE: Int { 1026 }
+    #endif
 }
 
 #endif // !hasFeature(Embedded)
