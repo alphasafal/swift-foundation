@@ -209,6 +209,10 @@ extension _FileManagerImpl {
                 guard charsReturned >= 0 else {
                     throw CocoaError.errorWithFilePath(path, errno: errno, reading: true)
                 }
+                // readlink does not report truncation; a full buffer means the target did not fit.
+                guard charsReturned < FileManager.MAX_PATH_SIZE else {
+                    throw CocoaError.errorWithFilePath(path, errno: ENAMETOOLONG, reading: true)
+                }
                 
                 return fileManager.string(withFileSystemRepresentation: buffer.baseAddress!, length: charsReturned)
             }

@@ -98,6 +98,10 @@ extension PredicateExpressions {
         public func evaluate(_ bindings: PredicateBindings) throws -> Swift.ClosedRange<LHS.Output> {
             let low = try lower.evaluate(bindings)
             let high = try upper.evaluate(bindings)
+            // `low...high` traps when the bounds are reversed; throw like `Range.evaluate` does instead
+            guard low <= high else {
+                throw PredicateError(.invalidInput("ClosedRange requires that lowerBound (\(low)) <= upperBound (\(high))"))
+            }
             return low...high
         }
     }

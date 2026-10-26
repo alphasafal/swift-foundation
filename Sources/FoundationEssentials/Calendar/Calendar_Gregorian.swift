@@ -2258,26 +2258,8 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
         let dcSecond = components.contains(.second) ? second : nil
         let dcWeekday = components.contains(.weekday) ? weekday : nil
         let dcWeekdayOrdinal = components.contains(.weekdayOrdinal) ? weekdayOrdinal : nil
-        let dcQuarter: Int? = components.contains(.quarter) ? {
-            if let dayOfYear = dayOfYear {
-                let isLeapYear = gregorianYearIsLeap(year)
-                return if !isLeapYear {
-                    if dayOfYear < 90 { 1 }
-                    else if dayOfYear < 181 { 2 }
-                    else if dayOfYear < 273 { 3 }
-                    else if dayOfYear < 366 { 4 }
-                    else { preconditionFailure("Invalid day of year") }
-                } else {
-                    if dayOfYear < 91 { 1 }
-                    else if dayOfYear < 182 { 2 }
-                    else if dayOfYear < 274 { 3 }
-                    else if dayOfYear < 367 { 4 }
-                    else { preconditionFailure("Invalid day of year") }
-                }
-            } else {
-                return 1 // fallback if calculations weren't performed
-            }
-        }() : nil
+        // Quarters are month-based (Jan-Mar = 1, ..., Oct-Dec = 4), matching ICU.
+        let dcQuarter: Int? = components.contains(.quarter) ? (month - 1) / 3 + 1 : nil
         let dcWeekOfMonth = components.contains(.weekOfMonth) ? weekOfMonth : nil
         let dcWeekOfYear = components.contains(.weekOfYear) ? weekOfYear : nil
         let dcYearForWeekOfYear = components.contains(.yearForWeekOfYear) ? yearForWeekOfYear : nil
@@ -2320,7 +2302,9 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
 
     // Returns the weekday of the last day of the month or the year, using `referenceDayOfPeriod` and `referenceDayWeekday` as the reference
     func relativeWeekdayForLastDayOfPeriod(periodLength: Int, referenceDayOfPeriod dayOfPeriod: Int, referenceDayWeekday weekday: Int) -> Int {
-        return (periodLength - dayOfPeriod + weekday - firstWeekday) % 7
+        // Swift's % keeps the sign; normalize to 0...6 like ICU does when weekday < firstWeekday
+        let relative = (periodLength - dayOfPeriod + weekday - firstWeekday) % 7
+        return relative < 0 ? relative + 7 : relative
     }
 
     // Returns the "adjusted" day of month considering gregorian cutover:
@@ -2354,9 +2338,23 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
         return (day, monthStartDate, monthLen, false)
     }
 
+    /// The extended (proleptic Gregorian) year for `components.year`.
+    ///
+    /// `DateComponents.year` holds an era year for the Buddhist, Japanese and Republic of China calendars and for
+    /// BCE dates, but leap-year and month-length math needs the extended year. Mirrors `date(from:)`.
+    func extendedYear(from components: DateComponents) -> Int? {
+        guard let year = components.year else { return nil }
+        if let era = eraTable.flatMap({ $0.entry(eraNumber: components.era ?? $0.defaultEraNumber) }) {
+            return era.extendedYear(fromEraYear: year)
+        } else if components.era == 0 {
+            return 1 - year
+        }
+        return year
+    }
+
     // Limits the day of month to the number of days in the given month
     func capDay(in dateComponent: inout DateComponents) {
-        guard let day = dateComponent.day, let month = dateComponent.month, let year = dateComponent.year else {
+        guard let day = dateComponent.day, let month = dateComponent.month, let year = extendedYear(from: dateComponent) else {
             return
         }
 
@@ -2841,8 +2839,8 @@ package final class _CalendarGregorian: _CalendarProtocol, @unchecked Sendable {
                     preconditionFailure("dateComponents(:from:in:) unexpectedly returns nil for requested component")
                 }
                 var isoDayOfYear = try dayOfYear(fromYear: year, month: month, day: day)
-                if month == 1 && weekOfYear > 52 {
-                    // the first week of the next year
+                if month == 1 && weekOfYear >= 52 {
+                    // a January date in week 52 or 53 belongs to the previous week-year
                     isoDayOfYear += yearLength(yearForWeekOfYear)
                 } else if month != 1 && weekOfYear == 1 {
                     // the last week of the previous year

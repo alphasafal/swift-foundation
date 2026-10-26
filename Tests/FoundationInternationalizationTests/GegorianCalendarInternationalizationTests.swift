@@ -857,6 +857,29 @@ private struct GregorianCalendarInternationalizationTests {
         testAdding(.init(weekOfYear: 1), to: date, expected: Date(timeIntervalSince1970: 814968187.0))
     }
     
+    @Test func addingWeeksWithWrappingMatchesICUForAllWeekSettings() throws {
+        let reference = _CalendarGregorian(identifier: .gregorian, timeZone: .gmt, locale: nil, firstWeekday: 1, minimumDaysInFirstWeek: 1, gregorianStartDate: nil)
+        func date(_ y: Int, _ m: Int, _ d: Int) throws -> Date {
+            try #require(reference.date(from: DateComponents(year: y, month: m, day: d, hour: 12)))
+        }
+        // Month ends, and January dates that belong to the previous week-year (weeks 52 and 53)
+        let dates = [try date(2026, 5, 31), try date(2023, 12, 31), try date(2000, 1, 1), try date(2021, 1, 3), try date(2004, 12, 31), try date(2024, 2, 29)]
+        for firstWeekday in 1...7 {
+            for minimumDays in [1, 4, 7] {
+                let ours = _CalendarGregorian(identifier: .gregorian, timeZone: .gmt, locale: nil, firstWeekday: firstWeekday, minimumDaysInFirstWeek: minimumDays, gregorianStartDate: nil)
+                let icu = _CalendarICU(identifier: .gregorian, timeZone: .gmt, locale: nil, firstWeekday: firstWeekday, minimumDaysInFirstWeek: minimumDays, gregorianStartDate: nil)
+                for start in dates {
+                    for amount in [-2, -1, 1, 2] {
+                        for components in [DateComponents(weekOfMonth: amount), DateComponents(weekOfYear: amount)] {
+                            #expect(ours.date(byAdding: components, to: start, wrappingComponents: true) == icu.date(byAdding: components, to: start, wrappingComponents: true),
+                                    "firstWeekday \(firstWeekday), minimumDays \(minimumDays), \(start) + \(components)")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Test func addDateComponents_Wrapping_DSTBoundaries() {
         let gregorianCalendar = _CalendarGregorian(identifier: .gregorian, timeZone: TimeZone(identifier: "America/Los_Angeles")!, locale: nil, firstWeekday: 3, minimumDaysInFirstWeek: 5, gregorianStartDate: nil)
         

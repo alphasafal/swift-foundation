@@ -178,7 +178,8 @@ extension BPlistMetadata {
             guard let span = buffer.getSizedIntSpan(at: objectTableCursor, endIndex: endIdx, size: offsetIntSize) else {
                 throw BPlistError.corruptTopLevelInfo
             }
-            guard let decoded = Int(exactly: span.bplistIntegerValue), decoded <= maxOffset else {
+            // Objects can't start inside the 8-byte "bplist00" header (matches BPlistScanner and CFBinaryPlist)
+            guard let decoded = Int(exactly: span.bplistIntegerValue), decoded >= 8, decoded <= maxOffset else {
                 throw BPlistError.corruptTopLevelInfo
             }
             objectTableCursor &+= offsetIntSize

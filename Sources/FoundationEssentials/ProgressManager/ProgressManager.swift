@@ -448,6 +448,11 @@ internal import _FoundationCollections
                               customPropertiesUInt64ArraySummary: [:],
                               customPropertiesDurationSummary: [:])
             state.children.append(child)
+            // A reporter that is already finished never transitions to finished later, so its share
+            // would never be added; count it now (overallFraction skips finished children).
+            if childFraction.isFinished {
+                state.selfFraction.completed += assignedCount
+            }
             return (state.children.count - 1, state.parents)
         }
         // Mark dirty all the way up to the root so that if the branch was marked not dirty right before this it will be marked dirty again (for optimization to work)

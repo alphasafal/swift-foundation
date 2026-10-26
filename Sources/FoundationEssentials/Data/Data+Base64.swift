@@ -572,6 +572,10 @@ extension Base64 {
             if inIndex + 3 < inBuffer.count, inBuffer[inIndex + 3] != Self.encodePaddingCharacter {
                 a3 = inBuffer[inIndex + 3]
             }
+            // Padding must be contiguous at the end of the input: "xx=x" is invalid (RFC 4648 §3.3).
+            if a2 == nil, a3 != nil {
+                throw DecodingError.invalidCharacter(Self.encodePaddingCharacter)
+            }
 
             let x: UInt32 = d0[a0] | d1[a1] | d2[a2 ?? 65] | d3[a3 ?? 65]
             if x >= Self.badCharacter {

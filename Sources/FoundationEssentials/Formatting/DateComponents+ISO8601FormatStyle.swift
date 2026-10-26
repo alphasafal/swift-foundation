@@ -258,7 +258,8 @@ extension DateComponents.ISO8601FormatStyle : FormatStyle {
                     if weekday >= 10 {
                         weekday = 10
                     }
-                    buffer.append(weekday - 1, zeroPad: 2)
+                    // ISO 8601 numbers Monday as 1 through Sunday as 7; Foundation's Sunday is 1.
+                    buffer.append(weekday == 1 ? 7 : weekday - 1, zeroPad: 2)
                 } else if formatFields.contains(.month) {
                     let day = components.day ?? 1
                     buffer.append(day, zeroPad: 2)
@@ -309,7 +310,8 @@ extension DateComponents.ISO8601FormatStyle : FormatStyle {
             if formatFields.contains(.timeZone) {
                 // A time zone name, not the same as the abbreviated name from TimeZone. e.g., that one includes a `:`.
                 var secondsFromGMT: Int
-                if let timeZoneOffset, (-18 * 3600 < timeZoneOffset && timeZoneOffset < 18 * 3600)  {
+                // ±18:00 is a valid offset (TimeZone(secondsFromGMT:) and the parser both accept it)
+                if let timeZoneOffset, (-18 * 3600 <= timeZoneOffset && timeZoneOffset <= 18 * 3600)  {
                     secondsFromGMT = timeZoneOffset
                 } else {
                     secondsFromGMT = 0

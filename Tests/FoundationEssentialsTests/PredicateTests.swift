@@ -213,6 +213,10 @@ private struct PredicateTests {
         }
         #expect(try predicate.evaluate(Object(a: 4, b: "", c: 0.0, d: 0, e: "c", f: true, g: [])))
         #expect(try predicate2.evaluate(Object(a: 3, b: "", c: 0.0, d: 5, e: "c", f: true, g: [])))
+        // Reversed bounds must throw (as `..<` does) instead of trapping the process
+        #expect(throws: PredicateError.self) {
+            try predicate2.evaluate(Object(a: 5, b: "", c: 0.0, d: 3, e: "c", f: true, g: []))
+        }
     }
     
     @Test func range() throws {

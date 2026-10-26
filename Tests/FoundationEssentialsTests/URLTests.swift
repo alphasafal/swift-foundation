@@ -33,6 +33,21 @@ private func checkBehavior<T: Equatable>(_ result: T, new: T, old: T, sourceLoca
 @Suite("URL")
 private struct URLTests {
 
+    @Test func userPasswordSplitAtFirstColon() throws {
+        let string = "https://alice:pa:ss@example.com/"
+        let url = try #require(URL(string: string))
+        #expect(url.user() == "alice")
+        #expect(url.password() == "pa:ss")
+
+        // URL and URLComponents must agree on the same input
+        let components = try #require(URLComponents(string: string))
+        #expect(components.user == url.user())
+        #expect(components.password == url.password())
+        let fromURL = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        #expect(fromURL.user == "alice")
+        #expect(fromURL.password == "pa:ss")
+    }
+
     @Test func basics() throws {
         let string = "https://username:password@example.com:80/path/path?query=value&q=v#fragment"
         let url = try #require(URL(string: string))
@@ -3725,6 +3740,16 @@ private struct URLTests {
         #expect(standardized.path() == "/base/directory/thing")
         #expect(standardized.absoluteURL.path() == expected.absoluteURL.path())
         #expect(standardized.absoluteURL.path() == "/base/directory/thing")
+    }
+
+    @Test func standardizedPathNeverBecomesAnAuthority() throws {
+        // Removing "/." from "/.//example.org/x" leaves "//example.org/x", which would re-parse with a host
+        let url = try #require(URL(string: "/.//example.org/x"))
+        let standardized = url.standardized
+        #expect(standardized.host() == nil)
+        let reparsed = try #require(URL(string: standardized.relativeString))
+        #expect(reparsed.host() == nil)
+        #expect(reparsed.path() == standardized.path())
     }
 
     @Test func standardized() throws {
