@@ -20,6 +20,22 @@ import Testing
 
 @Suite("Character Set: Range-Based Manipulation Tests", .tags(.characterSet))
 private struct CharacterSetRangeBasedManipulationTests {
+
+    @Test func insertNonBMPIntoInvertedSetKeepsMembers() throws {
+        // An inverted set already contains every scalar outside "a"; inserting must never remove anything
+        var set = CharacterSet(charactersIn: "a").inverted
+        #expect(set.contains("\u{1F600}"))
+
+        set.insert(charactersIn: "\u{1F600}")
+        #expect(set.contains("\u{1F600}"))
+
+        let supplementary = try #require(Unicode.Scalar(0x10000))...(try #require(Unicode.Scalar(0x10FFFF)))
+        set.insert(charactersIn: supplementary)
+        #expect(set.contains("\u{1F600}"))
+        #expect(set.contains(try #require(Unicode.Scalar(0x10000))))
+        #expect(set.contains(try #require(Unicode.Scalar(0x10FFFF))))
+        #expect(!set.contains("a"))
+    }
     
     @Test func initializeWithEmptyRange() {
         let characterSet = CharacterSet(charactersIn: UnicodeScalar(0x0041)!..<UnicodeScalar(0x0041)!)
