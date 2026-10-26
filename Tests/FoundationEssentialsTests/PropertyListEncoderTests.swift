@@ -1794,6 +1794,24 @@ data1 = <7465
         }
     }
 
+    @Test func objectOffsetPointingIntoHeaderIsRejected() throws {
+        // `["a", "b"]`; in the corrupted copy object 2's offset is 0, where the header bytes "bp" + "lis"
+        // happen to decode as a valid 2-character UTF-16 string. It must be rejected, not read as data.
+        let header: [UInt8] = [0x62, 0x70, 0x6c, 0x69, 0x73, 0x74, 0x30, 0x30] // bplist00
+        let objects: [UInt8] = [0xa2, 0x01, 0x02, 0x51, 0x61, 0x51, 0x62] // array(1, 2), "a", "b"
+        let trailer: [UInt8] = [0, 0, 0, 0, 0, 0, 0x01, 0x01,
+                                0, 0, 0, 0, 0, 0, 0, 0x03, // 3 objects
+                                0, 0, 0, 0, 0, 0, 0, 0x00, // top object 0
+                                0, 0, 0, 0, 0, 0, 0, 0x0f] // offset table at 15
+        let valid = Data(header + objects + [0x08, 0x0b, 0x0d] + trailer)
+        #expect(try PropertyListDecoder().decode([String].self, from: valid) == ["a", "b"])
+
+        let corrupted = Data(header + objects + [0x08, 0x0b, 0x00] + trailer)
+        #expect(throws: (any Error).self) {
+            try PropertyListDecoder().decode([String].self, from: corrupted)
+        }
+    }
+
     @Test func outOfBoundsOffsetTableStart() {
         // The following is the bplist representation of `[42, 314, 0xFF]` that has been corrupted.
         let bplist = [
