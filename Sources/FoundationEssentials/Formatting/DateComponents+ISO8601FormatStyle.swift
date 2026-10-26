@@ -309,7 +309,8 @@ extension DateComponents.ISO8601FormatStyle : FormatStyle {
             if formatFields.contains(.timeZone) {
                 // A time zone name, not the same as the abbreviated name from TimeZone. e.g., that one includes a `:`.
                 var secondsFromGMT: Int
-                if let timeZoneOffset, (-18 * 3600 < timeZoneOffset && timeZoneOffset < 18 * 3600)  {
+                // ±18:00 is a valid offset (TimeZone(secondsFromGMT:) and the parser both accept it)
+                if let timeZoneOffset, (-18 * 3600 <= timeZoneOffset && timeZoneOffset <= 18 * 3600)  {
                     secondsFromGMT = timeZoneOffset
                 } else {
                     secondsFromGMT = 0
