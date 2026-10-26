@@ -487,7 +487,9 @@ extension JSON5Scanner {
                 if Self.whitespaceBitmap & (1 << ascii) != 0 {
                     bytes.formIndex(after: &index)
                     continue
-                } else if ascii == ._nbsp {
+                } else if ascii == ._nbspUTF8LeadByte, bytes.index(after: index) < endIndex, bytes[unchecked: bytes.index(after: index)] == ._nbsp {
+                    // U+00A0 NO-BREAK SPACE is the UTF-8 sequence C2 A0
+                    bytes.formIndex(after: &index)
                     bytes.formIndex(after: &index)
                     continue
                 } else if ascii == ._slash {
@@ -515,7 +517,9 @@ extension JSON5Scanner {
                 if Self.whitespaceBitmap & (1 << ascii) != 0 {
                     bytes.formIndex(after: &index)
                     continue
-                } else if ascii == ._nbsp {
+                } else if ascii == ._nbspUTF8LeadByte, bytes.index(after: index) < endIndex, bytes[unchecked: bytes.index(after: index)] == ._nbsp {
+                    // U+00A0 NO-BREAK SPACE is the UTF-8 sequence C2 A0
+                    bytes.formIndex(after: &index)
                     bytes.formIndex(after: &index)
                     continue
                 } else if ascii == ._slash {

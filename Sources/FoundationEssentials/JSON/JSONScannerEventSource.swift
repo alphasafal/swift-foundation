@@ -453,8 +453,10 @@ struct JSONScannerEventSource<Mode: JSONScannerMode>: ParseEventSource<NullFilte
                 continue
             }
             if Mode.allowsJSON5 {
-                if b == ._nbsp {
-                    readOffset &+= 1
+                // U+00A0 is whitespace in JSON5; the input is UTF-8, so it is the two bytes C2 A0.
+                // (A lone 0xA0 byte is an invalid UTF-8 continuation byte, not whitespace.)
+                if b == ._nbspUTF8LeadByte, readOffset &+ 1 < sourceBytes.count, sourceBytes[readOffset &+ 1] == ._nbsp {
+                    readOffset &+= 2
                     continue
                 }
                 if b == ._forwardslash {
