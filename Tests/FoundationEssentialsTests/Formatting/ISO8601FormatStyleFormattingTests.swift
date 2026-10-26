@@ -187,6 +187,12 @@ private struct ISO8601FormatStyleFormattingTests {
 
         #expect(date.formatted(.iso8601.year().weekOfYear()) == "2021-W26")
         #expect(date.formatted(.iso8601.year().weekOfYear().day()) == "2021-W26-04") // day() is the weekday number
+
+        // ISO 8601 numbers Sunday as 7, never 0; 2022-01-02 is a Sunday in ISO week 2021-W52
+        let sunday = Date(timeIntervalSince1970: 1641081600) // 2022-01-02T00:00:00Z
+        let weekDateStyle = Date.ISO8601FormatStyle.iso8601.year().weekOfYear().day()
+        #expect(sunday.formatted(weekDateStyle) == "2021-W52-07")
+        #expect(try weekDateStyle.parse(sunday.formatted(weekDateStyle)) == sunday)
         #expect(date.formatted(.iso8601.year().day()) == "2021-182") // day() is the ordinal day
 
         #expect(date.formatted(.iso8601.time(includingFractionalSeconds: false)) == "15:56:32")

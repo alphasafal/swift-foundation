@@ -258,7 +258,8 @@ extension DateComponents.ISO8601FormatStyle : FormatStyle {
                     if weekday >= 10 {
                         weekday = 10
                     }
-                    buffer.append(weekday - 1, zeroPad: 2)
+                    // ISO 8601 numbers Monday as 1 through Sunday as 7; Foundation's Sunday is 1.
+                    buffer.append(weekday == 1 ? 7 : weekday - 1, zeroPad: 2)
                 } else if formatFields.contains(.month) {
                     let day = components.day ?? 1
                     buffer.append(day, zeroPad: 2)
