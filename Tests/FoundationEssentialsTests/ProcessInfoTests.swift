@@ -14,7 +14,7 @@ import Testing
 import Synchronization
 
 #if canImport(FoundationEssentials)
-import FoundationEssentials
+@testable import FoundationEssentials
 #else
 @testable import Foundation
 #endif
@@ -37,6 +37,19 @@ private struct ProcessInfoTests {
         let args = ProcessInfo.processInfo.arguments
         #expect(!args.isEmpty, "arguments should not have been empty")
     }
+
+#if os(Linux)
+    @Test func cpusetListCoreCount() {
+        // cgroup v1 cpuset.cpus may list several ranges; all of them count toward activeProcessorCount
+        #expect(_ProcessInfo.coreCount(cpusetList: "0-3") == 4)
+        #expect(_ProcessInfo.coreCount(cpusetList: "5") == 1)
+        #expect(_ProcessInfo.coreCount(cpusetList: "0,2") == 2)
+        #expect(_ProcessInfo.coreCount(cpusetList: "0,2,4,6") == 4)
+        #expect(_ProcessInfo.coreCount(cpusetList: "0-3,8-11") == 8)
+        #expect(_ProcessInfo.coreCount(cpusetList: "") == nil)
+        #expect(_ProcessInfo.coreCount(cpusetList: "3-1") == nil)
+    }
+#endif
 
     @Test func environment() {
 #if os(Windows)

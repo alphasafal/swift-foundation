@@ -546,14 +546,21 @@ extension _ProcessInfo {
     }
 
     private static func coreCount(cpuset cpusetURL: URL) -> Int? {
-        guard let cpuset = try? firstLineOfFile(cpusetURL).split(separator: ","),
-              !cpuset.isEmpty
-        else { return nil }
-        if let first = cpuset.first, let count = countCoreIds(cores: first) {
-            return count
-        } else {
-            return nil
+        guard let line = try? firstLineOfFile(cpusetURL) else { return nil }
+        return coreCount(cpusetList: line)
+    }
+
+    /// Counts the CPUs in a cpuset list such as "0-3", "0,2,4,6" or "0-3,8-11".
+    /// Every comma-separated range counts, not only the first one.
+    static func coreCount(cpusetList: Substring) -> Int? {
+        let ranges = cpusetList.split(separator: ",")
+        guard !ranges.isEmpty else { return nil }
+        var total = 0
+        for range in ranges {
+            guard let count = countCoreIds(cores: range) else { return nil }
+            total += count
         }
+        return total
     }
 
     private static func coreCount(quota quotaURL: URL,  period periodURL: URL) -> Int? {
